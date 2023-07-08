@@ -4,7 +4,16 @@
   "description": "A tiny tool to migrate sqlite3 database safely",
   "main": "index.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
     "test": "npm run test"
+  },
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
   },
   "author": "Muhammad Azamuddin",
   "license": "MIT",
@@ -20,6 +29,7 @@
     "@typescript-eslint/eslint-plugin": "^5.61.0",
     "@typescript-eslint/parser": "^5.61.0",
     "eslint": "^8.44.0",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "vite": "^4.4.2"
   }
 }
