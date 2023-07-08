@@ -5,14 +5,14 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "test": "npm run test"
   },
   "exports": {
     ".": {
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/types.d.ts"
     }
   },
   "author": "Muhammad Azamuddin",

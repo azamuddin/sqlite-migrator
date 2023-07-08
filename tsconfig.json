@@ -4,7 +4,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    "lib": ["es2017", "node"],
+    "lib": ["es2017"],
     "module": "commonjs",
     "moduleResolution": "node",
     "noEmit": true,

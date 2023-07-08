@@ -1,16 +1,16 @@
 import {assign} from '@xstate/immer';
 import fs from 'fs';
 import {sql} from 'kysely';
-import {createMachine, interpret} from 'xstate';
+import {createMachine} from 'xstate';
 import {executeMigrationMachine} from './execute-migration/machine';
 import {createSqliteKysely} from '../utils/sqlite-factory';
 
 type MigrationMachineContext = {
-  db_path: string;
-  db_exist: boolean;
-  current_version: number | null;
-  user_version: number | null;
-  schema_version: number | null;
+  dbPath: string;
+  dbExist: boolean;
+  latestVersion: number | null;
+  userVersion: number | null;
+  schemaVersion: number | null;
 };
 
 type MigrationMachineServiceMap = {
@@ -31,11 +31,11 @@ export const migrationMachine = createMachine(
     },
     tsTypes: {} as import('./machine.typegen').Typegen0,
     context: {
-      db_path: '/database.db',
-      db_exist: false,
-      current_version: null,
-      user_version: null,
-      schema_version: null,
+      dbPath: '/database.db',
+      dbExist: false,
+      latestVersion: null,
+      userVersion: null,
+      schemaVersion: null,
     },
     predictableActionArguments: true,
     preserveActionOrder: true,
@@ -124,15 +124,15 @@ export const migrationMachine = createMachine(
   {
     actions: {
       assignDatabaseExist: assign(context => {
-        context.db_exist = fs.existsSync(context.db_path);
+        context.dbExist = fs.existsSync(context.dbPath);
       }),
       assignUserVersion: assign((context, event) => {
-        context.user_version = event.data;
+        context.userVersion = event.data;
       }),
     },
     services: {
       getUserVersion: async context => {
-        const db = createSqliteKysely(context.db_path);
+        const db = createSqliteKysely(context.dbPath);
         const result = await sql<{
           user_version: number;
         }>`PRAGMA user_version`.execute(db);
@@ -145,20 +145,10 @@ export const migrationMachine = createMachine(
       },
     },
     guards: {
-      hasNextPendingMigration: context => {
+      hasNextPendingMigration: () => {
         return false;
       },
-      databaseExists: context => context.db_exist,
+      databaseExists: context => context.dbExist,
     },
   },
 );
-
-export const MigrationActor = interpret(migrationMachine).start();
-
-MigrationActor.onTransition(state => {
-  console.log('MIGRATION ACTOR value', state.value);
-  console.log('MIGRATION ACTOR context', state.context);
-});
-MigrationActor.onEvent(event => {
-  console.log('MIGRATION ACTOR events', event);
-});
