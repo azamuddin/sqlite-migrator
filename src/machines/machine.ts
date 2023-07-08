@@ -124,6 +124,7 @@ export const migrationMachine = createMachine(
   {
     actions: {
       assignDatabaseExist: assign(context => {
+        console.log('migrationMachine.actions.assignDatabaseExist');
         context.dbExist = fs.existsSync(context.dbPath);
       }),
       assignUserVersion: assign((context, event) => {

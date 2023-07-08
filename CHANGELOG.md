@@ -1,5 +1,11 @@
 # sqlite-migrator
 
+## 0.2.2
+
+### Patch Changes
+
+- Just log
+
 ## 0.2.1
 
 ### Patch Changes
