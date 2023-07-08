@@ -4,6 +4,7 @@ import {sql} from 'kysely';
 import {createMachine} from 'xstate';
 import {executeMigrationMachine} from './execute-migration/machine';
 import {createSqliteKysely} from '../utils/sqlite-factory';
+import {logger} from '../utils/logger';
 
 type MigrationMachineContext = {
   dbPath: string;
@@ -11,6 +12,7 @@ type MigrationMachineContext = {
   latestVersion: number | null;
   userVersion: number | null;
   schemaVersion: number | null;
+  debug: boolean;
 };
 
 type MigrationMachineServiceMap = {
@@ -36,6 +38,7 @@ export const migrationMachine = createMachine(
       latestVersion: null,
       userVersion: null,
       schemaVersion: null,
+      debug: false,
     },
     predictableActionArguments: true,
     preserveActionOrder: true,
@@ -124,7 +127,7 @@ export const migrationMachine = createMachine(
   {
     actions: {
       assignDatabaseExist: assign(context => {
-        console.log('migrationMachine.actions.assignDatabaseExist');
+        logger.info('migrationMachine.actions.assignDatabaseExist');
         context.dbExist = fs.existsSync(context.dbPath);
       }),
       assignUserVersion: assign((context, event) => {
@@ -137,7 +140,7 @@ export const migrationMachine = createMachine(
         const result = await sql<{
           user_version: number;
         }>`PRAGMA user_version`.execute(db);
-        console.log('MIGRATION ACTOR.services.getUserVersion', result.rows);
+        logger.info('MIGRATION ACTOR.services.getUserVersion', result.rows);
         return result.rows?.[0]?.user_version;
       },
       executeMigrationMachine,

@@ -1,20 +1,28 @@
 import {interpret} from 'xstate';
 import {migrationMachine} from './machines/machine';
+import {logger} from './utils/logger';
 
 interface MigrationOptions {
   dbPath: string;
   latestVersion: number;
+  debug: boolean;
 }
 
 const migrate = (options: MigrationOptions) => {
-  console.log('DUMMY MIGRATION READY');
+  const {dbPath, latestVersion, debug = false} = options;
+
+  if (debug) {
+    logger.setLevel('debug');
+  }
+
   const migrationActor = interpret(
     migrationMachine.withContext({
-      dbPath: options.dbPath,
-      latestVersion: options.latestVersion,
+      dbPath: dbPath,
+      latestVersion: latestVersion,
       schemaVersion: null,
       userVersion: null,
       dbExist: false,
+      debug: debug,
     }),
   );
   migrationActor.start();
