@@ -8,6 +8,8 @@
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "build": "tsc && vite build",
+    "prepublishOnly": "corepack npm run build",
+    "release": "changeset publish",
     "test": "npm run test"
   },
   "exports": {
