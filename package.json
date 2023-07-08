@@ -8,9 +8,10 @@
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "build": "tsc && vite build && npm run build:types",
-    "build:types": "dts-bundle-generator --config ./dts-bundle-generator.config.ts",
+    "build:types": "dts-bundle-generator --config ./dts-bundle-generator.config.ts && npm run copy:types",
+    "copy:types": "cp dist/index.d.ts ./",
     "prepublishOnly": "corepack npm run build",
-    "release": "changeset publish",
+    "release": "npm publish",
     "test": "npm run test"
   },
   "exports": {
@@ -22,7 +23,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src", 
+    "index.d.ts"
   ],
   "author": "Muhammad Azamuddin",
   "license": "MIT",
