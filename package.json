@@ -7,7 +7,8 @@
     "dev": "vite",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && npm run build:types",
+    "build:types": "dts-bundle-generator --config ./dts-bundle-generator.config.ts",
     "prepublishOnly": "corepack npm run build",
     "release": "changeset publish",
     "test": "npm run test"
@@ -16,7 +17,7 @@
     ".": {
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs",
-      "types": "./dist/types.d.ts"
+      "types": "./dist/index.d.ts"
     }
   },
   "author": "Muhammad Azamuddin",
@@ -33,6 +34,7 @@
     "@types/node": "^20.4.1",
     "@typescript-eslint/eslint-plugin": "^5.61.0",
     "@typescript-eslint/parser": "^5.61.0",
+    "dts-bundle-generator": "^8.0.1",
     "eslint": "^8.44.0",
     "typescript": "^5.1.6",
     "vite": "^4.4.2"
