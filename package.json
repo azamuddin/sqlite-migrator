@@ -1,6 +1,6 @@
 {
   "name": "sqlite-migrator",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A tiny tool to migrate sqlite3 database safely",
   "main": "index.js",
   "scripts": {
@@ -20,7 +20,10 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "author": "Muhammad Azamuddin",
   "license": "MIT",
   "dependencies": {
