@@ -21,7 +21,13 @@ const getMigrations = (migrationDir: string, version: number) => {
 }
 
 export const runFreshMigration =
-  (migrationRunner: (migration: Migration, db: Kysely<any>) => Promise<void>) =>
+  (
+    migrationRunner: (
+      migration: Migration,
+      db: Kysely<any>,
+      fileName: string,
+    ) => Promise<void>,
+  ) =>
   async (context: MigrationMachineContext) => {
     logger.debug('migrationMachine.services.runFreshMigration', context.dbPath)
     const db = createDB(context.dbPath)
@@ -35,7 +41,7 @@ export const runFreshMigration =
           const migration = await import(
             path.resolve(context.migrationDir, version.toString(), file)
           )
-          await migrationRunner(migration, db)
+          await migrationRunner(migration, db, file)
         })
       },
     )

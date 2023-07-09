@@ -17,7 +17,7 @@ export type MigrationMachineContext = {
   _userVersion: number | null
 }
 
-type MigrationMachineServiceMap = {
+export type MigrationMachineServiceMap = {
   getUserVersion: {
     data: number
   }

@@ -1,27 +1,48 @@
 import path, { dirname } from 'path'
 import { describe, beforeEach, it, expect, afterEach } from 'vitest'
-import { interpret } from 'xstate'
-import { migrationMachine } from '../machine'
+import {
+  InternalMachineOptions,
+  MachineOptionsFrom,
+  StateMachine,
+  StateSchema,
+  interpret,
+} from 'xstate'
+import {
+  MigrationMachineContext,
+  MigrationMachineServiceMap,
+  migrationMachine,
+} from '../machine'
 import { logger } from '../../utils/logger'
 import { existsSync, mkdirSync, rmdir, rmdirSync, unlinkSync } from 'fs'
 import { createDB as createDB } from '../../utils/sqlite-factory'
-import { sql } from 'kysely'
+import { Kysely, sql } from 'kysely'
+import { runFreshMigration } from '../../shared/run-fresh-migration'
+import { Migration } from '../../types'
 
 logger.setLevel('debug')
 
 const DB_PATH = path.resolve(__dirname, './db/database.sql')
 const MIGRATION_DIR = path.resolve(__dirname, './migrations')
-const createMigrationActor = () => {
+const createMigrationActor = (
+  config?: Parameters<(typeof migrationMachine)['withConfig']>[0],
+  context?: MigrationMachineContext,
+) => {
+  let machine = migrationMachine
+  if (config) {
+    machine = machine.withConfig(config)
+  }
   return interpret(
-    migrationMachine.withContext({
-      dbPath: DB_PATH,
-      debug: true,
-      migrationDir: MIGRATION_DIR,
-      _dbExist: false,
-      _userVersion: null,
-      _schemaVersion: null,
-      _latestVersion: null,
-    }),
+    machine.withContext(
+      context ?? {
+        dbPath: DB_PATH,
+        debug: true,
+        migrationDir: MIGRATION_DIR,
+        _dbExist: false,
+        _userVersion: null,
+        _schemaVersion: null,
+        _latestVersion: null,
+      },
+    ),
   )
 }
 
@@ -86,7 +107,37 @@ describe('Migration machine', () => {
         'createdAt, updatedAt and deletedAt column should exists',
       ).toBeTruthy()
     })
-    it.skip('should run migrations in the correct order', () => {})
+    it('should run migrations in the correct order', async () => {
+      const getResult = async (): Promise<string[]> => {
+        return new Promise((resolve) => {
+          let migrationsRun: string[] = []
+          const mockedRunner = async (
+            migration: Migration,
+            db: Kysely<any>,
+            filePath: string,
+          ) => {
+            migrationsRun.push(filePath)
+            migration.up(db)
+          }
+          const actor = createMigrationActor({
+            services: { runFreshMigration: runFreshMigration(mockedRunner) },
+          }).start()
+          actor.onTransition((state) => {
+            if (state.matches('done')) {
+              resolve(migrationsRun)
+            }
+          })
+        })
+      }
+      const result = await getResult()
+      expect(result[0]).toEqual('2023_07_08_133201-create-users-table.ts')
+      expect(result[1]).toEqual(
+        '2023_07_09_144933-add-timestamp-to-users-table.ts',
+      )
+      expect(result[2]).toEqual(
+        '2023_07_09_150000-add-deleted-at-to-users-table.ts',
+      )
+    })
   })
   describe('When database already exists', () => {
     describe('When user schema already latest', () => {
