@@ -1,28 +1,33 @@
-import {assign} from '@xstate/immer';
-import fs from 'fs';
-import {sql} from 'kysely';
-import {createMachine} from 'xstate';
-import {executeMigrationMachine} from './execute-migration/machine';
-import {createSqliteKysely} from '../utils/sqlite-factory';
-import {logger} from '../utils/logger';
+import { assign } from '@xstate/immer'
+import fs from 'fs'
+import { Kysely, sql } from 'kysely'
+import { createMachine } from 'xstate'
+import { executeMigrationMachine } from './execute-migration/machine'
+import { createSqliteKysely } from '../utils/sqlite-factory'
+import { logger } from '../utils/logger'
+
+type Migration = {
+  up: (db: Kysely<any>) => Promise<void>
+  tranform: (db: Kysely<any>) => Promise<void>
+}
 
 type MigrationMachineContext = {
-  dbPath: string;
-  dbExist: boolean;
-  latestVersion: number | null;
-  userVersion: number | null;
-  schemaVersion: number | null;
-  debug: boolean;
-};
+  dbPath: string
+  dbExist: boolean
+  latestVersion: number | null
+  userVersion: number | null
+  schemaVersion: number | null
+  debug: boolean
+}
 
 type MigrationMachineServiceMap = {
   getUserVersion: {
-    data: number;
-  };
+    data: number
+  }
   runFreshMigration: {
-    data: any;
-  };
-};
+    data: boolean
+  }
+}
 
 export const migrationMachine = createMachine(
   {
@@ -126,33 +131,42 @@ export const migrationMachine = createMachine(
   },
   {
     actions: {
-      assignDatabaseExist: assign(context => {
-        logger.info('migrationMachine.actions.assignDatabaseExist');
-        context.dbExist = fs.existsSync(context.dbPath);
+      assignDatabaseExist: assign((context) => {
+        logger.info('migrationMachine.actions.assignDatabaseExist')
+        context.dbExist = fs.existsSync(context.dbPath)
       }),
       assignUserVersion: assign((context, event) => {
-        context.userVersion = event.data;
+        context.userVersion = event.data
       }),
     },
     services: {
-      getUserVersion: async context => {
-        const db = createSqliteKysely(context.dbPath);
+      getUserVersion: async (context) => {
+        const db = createSqliteKysely(context.dbPath)
         const result = await sql<{
-          user_version: number;
-        }>`PRAGMA user_version`.execute(db);
-        logger.info('MIGRATION ACTOR.services.getUserVersion', result.rows);
-        return result.rows?.[0]?.user_version;
+          user_version: number
+        }>`PRAGMA user_version`.execute(db)
+        logger.info('MIGRATION ACTOR.services.getUserVersion', result.rows)
+        return result.rows?.[0]?.user_version
       },
       executeMigrationMachine,
-      runFreshMigration: async () => {
-        // TODO
+      runFreshMigration: async (context): Promise<boolean> => {
+        logger.debug(
+          'migrationMachine.services.runFreshMigration',
+          context.dbPath,
+        )
+        const db = createSqliteKysely(context.dbPath)
+        const migration = await import(
+          './__tests__/migrations/2023_07_08_183201-create-user-table/schema'
+        )
+        await migration.up(db)
+        return true
       },
     },
     guards: {
       hasNextPendingMigration: () => {
-        return false;
+        return false
       },
-      databaseExists: context => context.dbExist,
+      databaseExists: (context) => context.dbExist,
     },
   },
-);
+)

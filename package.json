@@ -12,7 +12,7 @@
     "copy:types": "cp dist/index.d.ts ./",
     "prepublishOnly": "corepack npm run build",
     "release": "npm publish",
-    "test": "npm run test"
+    "test": "vitest"
   },
   "exports": {
     ".": {
@@ -40,11 +40,13 @@
     "@types/node": "^20.4.1",
     "@typescript-eslint/eslint-plugin": "^5.61.0",
     "@typescript-eslint/parser": "^5.61.0",
+    "@xstate/test": "^1.0.0-alpha.1",
     "dts-bundle-generator": "^8.0.1",
     "eslint": "^8.44.0",
     "node-color-log": "^10.0.2",
     "prettier": "3.0.0",
     "typescript": "^5.1.6",
-    "vite": "^4.4.2"
+    "vite": "^4.4.2",
+    "vitest": "^0.33.0"
   }
 }
