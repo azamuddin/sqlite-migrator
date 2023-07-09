@@ -1,22 +1,12 @@
 import path, { dirname } from 'path'
 import { describe, beforeEach, it, expect, afterEach } from 'vitest'
-import {
-  InternalMachineOptions,
-  MachineOptionsFrom,
-  StateMachine,
-  StateSchema,
-  interpret,
-} from 'xstate'
-import {
-  MigrationMachineContext,
-  MigrationMachineServiceMap,
-  migrationMachine,
-} from '../machine'
+import { interpret } from 'xstate'
+import { MigrationMachineContext, migrationMachine } from '../machine'
 import { logger } from '../../utils/logger'
 import { existsSync, mkdirSync, rmdir, rmdirSync, unlinkSync } from 'fs'
 import { createDB as createDB } from '../../utils/sqlite-factory'
 import { Kysely, sql } from 'kysely'
-import { runFreshMigration } from '../../shared/run-fresh-migration'
+import { runFreshMigration } from '../../shared/migrations'
 import { Migration } from '../../types'
 
 logger.setLevel('debug')
@@ -138,13 +128,84 @@ describe('Migration machine', () => {
         '2023_07_09_150000-add-deleted-at-to-users-table.ts',
       )
     })
-  })
-  describe('When database already exists', () => {
-    describe('When user schema already latest', () => {
-      it.todo('should not do migration')
+
+    it('should update user version pragma', async () => {
+      const getResult = async () => {
+        return new Promise((resolve) => {
+          const actor = createMigrationActor().start()
+          actor.onTransition(async (state) => {
+            if (state.matches('done')) {
+              const db = createDB(DB_PATH)
+              const result = await sql<{
+                user_version: number
+              }>`PRAGMA user_version`.execute(db)
+              resolve(result.rows[0].user_version)
+            }
+          })
+        })
+      }
+      const version = await getResult()
+      expect(version).toEqual(2)
     })
+  })
+  describe.skip('When database already exists', () => {
+    type Context = { db: Kysely<any> }
+    beforeEach<Context>((context) => {
+      if (!existsSync(dirname(DB_PATH))) {
+        mkdirSync(dirname(DB_PATH))
+      }
+      context.db = createDB(DB_PATH)
+    })
+    afterEach(() => {
+      if (existsSync(dirname(DB_PATH))) {
+        rmdirSync(dirname(DB_PATH), { recursive: true })
+      }
+    })
+    describe('When user schema already latest', () => {
+      it('should not do migration', async () => {
+        const getResult = async () => {
+          return new Promise((resolve) => {
+            const actor = createMigrationActor().start()
+            actor.onTransition((state) => {
+              logger.debug(state.toStrings(), 'STATE VALUE')
+              if (state.matches('execute migration')) {
+                resolve(true)
+              }
+              if (state.matches('run fresh migration')) {
+                resolve(true)
+              }
+              if (state.matches('done')) {
+                resolve(false)
+              }
+            })
+          })
+        }
+        const result = await getResult()
+        expect(result).toBeFalsy()
+      })
+    })
+
     describe('Else', () => {
-      it.todo('should run pending migration successfully')
+      beforeEach(() => {
+        const actor = createMigrationActor().start()
+      })
+      it<Context>('should run pending migration successfully', async (context) => {
+        const getResult = async () => {
+          return new Promise((resolve) => {
+            const actor = createMigrationActor().start()
+            actor.onTransition((state) => {
+              if (state.matches('execute migration')) {
+                resolve(true)
+              }
+              if (state.matches('done')) {
+                resolve(false)
+              }
+            })
+          })
+        }
+        const result = await getResult()
+        expect(result).toBeTruthy()
+      })
     })
   })
 })

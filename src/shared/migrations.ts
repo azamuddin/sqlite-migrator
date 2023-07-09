@@ -7,7 +7,7 @@ import { readdirSync } from 'fs'
 import { Migration } from '../types'
 import { Kysely } from 'kysely'
 
-const getLatestMigration = (migrationDir: string): number => {
+export const getLatestMigration = (migrationDir: string): number => {
   const migrationVersions = readdirSync(migrationDir)
   const latestVersion = migrationVersions
     .map((version) => parseInt(version))
@@ -15,7 +15,7 @@ const getLatestMigration = (migrationDir: string): number => {
   return latestVersion
 }
 
-const getMigrations = (migrationDir: string, version: number) => {
+export const getMigrations = (migrationDir: string, version: number) => {
   const latestDir = path.resolve(migrationDir, `${version}`)
   return readdirSync(latestDir)
 }

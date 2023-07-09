@@ -5,7 +5,8 @@ import { createMachine } from 'xstate'
 import { executeMigrationMachine } from './execute-migration/machine'
 import { createDB } from '../utils/sqlite-factory'
 import { logger } from '../utils/logger'
-import { runFreshMigration } from '../shared/run-fresh-migration'
+import { getLatestMigration, runFreshMigration } from '../shared/migrations'
+import Database from 'better-sqlite3'
 
 export type MigrationMachineContext = {
   dbPath: string
@@ -95,7 +96,7 @@ export const migrationMachine = createMachine(
           id: 'runFreshMigration',
           onDone: [
             {
-              target: 'done',
+              target: 'update user version',
             },
           ],
           onError: [
@@ -103,6 +104,12 @@ export const migrationMachine = createMachine(
               target: 'migration failed',
             },
           ],
+        },
+      },
+      'update user version': {
+        entry: ['updateUserVersion'],
+        always: {
+          target: 'done',
         },
       },
       'execute migration': {
@@ -135,6 +142,11 @@ export const migrationMachine = createMachine(
       }),
       assignUserVersion: assign((context, event) => {
         context._userVersion = event.data
+      }),
+      updateUserVersion: assign(async (context) => {
+        const db = new Database(context.dbPath)
+        const latest = getLatestMigration(context.migrationDir)
+        db.exec(`PRAGMA user_version = ${latest}`)
       }),
     },
     services: {
