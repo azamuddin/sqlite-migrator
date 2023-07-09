@@ -9,19 +9,20 @@ import { sql } from 'kysely'
 
 logger.setLevel('debug')
 
-const dbPath = path.resolve(__dirname, './db/database.sql')
-const testTableName = 'users'
+const DB_PATH = path.resolve(__dirname, './db/database.sql')
+const TEST_TABLE_NAME = 'users'
+const MIGRATION_DIR = path.resolve(__dirname, './migrations')
 
 describe('Migration machine', () => {
   beforeEach(() => {
-    if (existsSync(dbPath)) {
-      rmdirSync(dirname(dbPath), { recursive: true })
+    if (existsSync(DB_PATH)) {
+      rmdirSync(dirname(DB_PATH), { recursive: true })
     }
-    mkdirSync(dirname(dbPath))
+    mkdirSync(dirname(DB_PATH))
   })
   afterEach(() => {
-    if (existsSync(dbPath)) {
-      rmdirSync(dirname(dbPath), { recursive: true })
+    if (existsSync(DB_PATH)) {
+      rmdirSync(dirname(DB_PATH), { recursive: true })
     }
   })
   describe("when database doesn't exist", () => {
@@ -30,20 +31,22 @@ describe('Migration machine', () => {
         new Promise((resolve) => {
           const actor = interpret(
             migrationMachine.withContext({
-              dbPath,
-              dbExist: false,
+              dbPath: DB_PATH,
               debug: true,
-              userVersion: null,
-              schemaVersion: null,
-              latestVersion: 5,
+              migrationDir: MIGRATION_DIR,
+              _dbExist: false,
+              _userVersion: null,
+              _schemaVersion: null,
+              _latestVersion: null,
             }),
           )
           actor.start()
           actor.onTransition(async (state) => {
+            logger.debug('STATE: ' + state.toStrings())
             if (state.matches('done')) {
-              const db = createSqliteKysely(dbPath)
+              const db = createSqliteKysely(DB_PATH)
               const userTable =
-                await sql`SELECT name FROM sqlite_master WHERE type='table' AND name=${testTableName}`.execute(
+                await sql`SELECT name FROM sqlite_master WHERE type='table' AND name='users'`.execute(
                   db,
                 )
               if (userTable.rows.length > 0) {

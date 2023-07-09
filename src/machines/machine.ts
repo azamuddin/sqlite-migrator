@@ -1,23 +1,20 @@
 import { assign } from '@xstate/immer'
-import fs from 'fs'
-import { Kysely, sql } from 'kysely'
+import fs, { readdirSync } from 'fs'
+import { Migrator, sql } from 'kysely'
 import { createMachine } from 'xstate'
 import { executeMigrationMachine } from './execute-migration/machine'
 import { createSqliteKysely } from '../utils/sqlite-factory'
 import { logger } from '../utils/logger'
+import path from 'path'
 
-type Migration = {
-  up: (db: Kysely<any>) => Promise<void>
-  tranform: (db: Kysely<any>) => Promise<void>
-}
-
-type MigrationMachineContext = {
+export type MigrationMachineContext = {
   dbPath: string
-  dbExist: boolean
-  latestVersion: number | null
-  userVersion: number | null
-  schemaVersion: number | null
   debug: boolean
+  migrationDir: string
+  _dbExist: boolean
+  _latestVersion: number | null
+  _schemaVersion: number | null
+  _userVersion: number | null
 }
 
 type MigrationMachineServiceMap = {
@@ -29,6 +26,36 @@ type MigrationMachineServiceMap = {
   }
 }
 
+const getLatestMigration = (migrationDir: string): number => {
+  const migrationVersions = readdirSync(migrationDir)
+  const latestVersion = migrationVersions
+    .map((version) => parseInt(version))
+    .sort((a, b) => b - a)[0]
+  return latestVersion
+}
+
+const getMigrations = (migrationDir: string, version: number) => {
+  const latestDir = path.resolve(migrationDir, `${version}`)
+  return readdirSync(latestDir)
+}
+
+const asyncForEach = async <T>(
+  data: T[],
+  predicate: (item: T) => Promise<void>,
+) => {
+  return await Promise.all(
+    data.map((item) => {
+      return new Promise(async (resolve) => resolve(await predicate(item)))
+    }),
+  )
+}
+
+// const migration = await import(
+//   path.resolve(context.migrationDir, current.toString(), file)
+// )
+// await migration.up(db)
+// resolve(true)
+
 export const migrationMachine = createMachine(
   {
     id: 'migration-machine',
@@ -39,11 +66,12 @@ export const migrationMachine = createMachine(
     tsTypes: {} as import('./machine.typegen').Typegen0,
     context: {
       dbPath: '/database.db',
-      dbExist: false,
-      latestVersion: null,
-      userVersion: null,
-      schemaVersion: null,
       debug: false,
+      migrationDir: '',
+      _dbExist: false,
+      _userVersion: null,
+      _latestVersion: null,
+      _schemaVersion: null,
     },
     predictableActionArguments: true,
     preserveActionOrder: true,
@@ -133,10 +161,10 @@ export const migrationMachine = createMachine(
     actions: {
       assignDatabaseExist: assign((context) => {
         logger.info('migrationMachine.actions.assignDatabaseExist')
-        context.dbExist = fs.existsSync(context.dbPath)
+        context._dbExist = fs.existsSync(context.dbPath)
       }),
       assignUserVersion: assign((context, event) => {
-        context.userVersion = event.data
+        context._userVersion = event.data
       }),
     },
     services: {
@@ -155,10 +183,21 @@ export const migrationMachine = createMachine(
           context.dbPath,
         )
         const db = createSqliteKysely(context.dbPath)
-        const migration = await import(
-          './__tests__/migrations/2023_07_08_183201-create-user-table/schema'
+        const latest = getLatestMigration(context.migrationDir)
+        await asyncForEach(
+          Array.from({ length: latest }).map((_, index) => index + 1),
+          async (version) => {
+            logger.debug(`PROCESSING migration version ${version}`)
+            const files = getMigrations(context.migrationDir, version)
+            await asyncForEach(files, async (file) => {
+              const migration = await import(
+                path.resolve(context.migrationDir, version.toString(), file)
+              )
+              await migration.up(db)
+            })
+          },
         )
-        await migration.up(db)
+        logger.debug('DONE PROCESING all migrations')
         return true
       },
     },
@@ -166,7 +205,7 @@ export const migrationMachine = createMachine(
       hasNextPendingMigration: () => {
         return false
       },
-      databaseExists: (context) => context.dbExist,
+      databaseExists: (context) => context._dbExist,
     },
   },
 )

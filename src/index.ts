@@ -1,31 +1,31 @@
-import {interpret} from 'xstate';
-import {migrationMachine} from './machines/machine';
-import {logger} from './utils/logger';
+import { interpret } from 'xstate'
+import { MigrationMachineContext, migrationMachine } from './machines/machine'
+import { logger } from './utils/logger'
 
-interface MigrationOptions {
-  dbPath: string;
-  latestVersion: number;
-  debug: boolean;
-}
+type MigrationOptions = Pick<
+  MigrationMachineContext,
+  'migrationDir' | 'debug' | 'dbPath'
+>
 
 const migrate = (options: MigrationOptions) => {
-  const {dbPath, latestVersion, debug = false} = options;
+  const { dbPath, migrationDir, debug = false } = options
 
   if (debug) {
-    logger.setLevel('debug');
+    logger.setLevel('debug')
   }
 
   const migrationActor = interpret(
     migrationMachine.withContext({
       dbPath: dbPath,
-      latestVersion: latestVersion,
-      schemaVersion: null,
-      userVersion: null,
-      dbExist: false,
       debug: debug,
+      migrationDir: migrationDir,
+      _latestVersion: null,
+      _schemaVersion: null,
+      _userVersion: null,
+      _dbExist: false,
     }),
-  );
-  migrationActor.start();
-};
+  )
+  migrationActor.start()
+}
 
-export {migrate};
+export { migrate }
