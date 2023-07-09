@@ -1,11 +1,11 @@
 import { assign } from '@xstate/immer'
-import fs, { readdirSync } from 'fs'
-import { Migrator, sql } from 'kysely'
+import fs from 'fs'
+import { sql } from 'kysely'
 import { createMachine } from 'xstate'
 import { executeMigrationMachine } from './execute-migration/machine'
-import { createSqliteKysely } from '../utils/sqlite-factory'
+import { createDB } from '../utils/sqlite-factory'
 import { logger } from '../utils/logger'
-import path from 'path'
+import { runFreshMigration } from '../shared/run-fresh-migration'
 
 export type MigrationMachineContext = {
   dbPath: string
@@ -25,36 +25,6 @@ type MigrationMachineServiceMap = {
     data: boolean
   }
 }
-
-const getLatestMigration = (migrationDir: string): number => {
-  const migrationVersions = readdirSync(migrationDir)
-  const latestVersion = migrationVersions
-    .map((version) => parseInt(version))
-    .sort((a, b) => b - a)[0]
-  return latestVersion
-}
-
-const getMigrations = (migrationDir: string, version: number) => {
-  const latestDir = path.resolve(migrationDir, `${version}`)
-  return readdirSync(latestDir)
-}
-
-const asyncForEach = async <T>(
-  data: T[],
-  predicate: (item: T) => Promise<void>,
-) => {
-  return await Promise.all(
-    data.map((item) => {
-      return new Promise(async (resolve) => resolve(await predicate(item)))
-    }),
-  )
-}
-
-// const migration = await import(
-//   path.resolve(context.migrationDir, current.toString(), file)
-// )
-// await migration.up(db)
-// resolve(true)
 
 export const migrationMachine = createMachine(
   {
@@ -169,7 +139,7 @@ export const migrationMachine = createMachine(
     },
     services: {
       getUserVersion: async (context) => {
-        const db = createSqliteKysely(context.dbPath)
+        const db = createDB(context.dbPath)
         const result = await sql<{
           user_version: number
         }>`PRAGMA user_version`.execute(db)
@@ -177,29 +147,9 @@ export const migrationMachine = createMachine(
         return result.rows?.[0]?.user_version
       },
       executeMigrationMachine,
-      runFreshMigration: async (context): Promise<boolean> => {
-        logger.debug(
-          'migrationMachine.services.runFreshMigration',
-          context.dbPath,
-        )
-        const db = createSqliteKysely(context.dbPath)
-        const latest = getLatestMigration(context.migrationDir)
-        await asyncForEach(
-          Array.from({ length: latest }).map((_, index) => index + 1),
-          async (version) => {
-            logger.debug(`PROCESSING migration version ${version}`)
-            const files = getMigrations(context.migrationDir, version)
-            await asyncForEach(files, async (file) => {
-              const migration = await import(
-                path.resolve(context.migrationDir, version.toString(), file)
-              )
-              await migration.up(db)
-            })
-          },
-        )
-        logger.debug('DONE PROCESING all migrations')
-        return true
-      },
+      runFreshMigration: runFreshMigration(
+        async (migration, db) => await migration.up(db),
+      ),
     },
     guards: {
       hasNextPendingMigration: () => {
