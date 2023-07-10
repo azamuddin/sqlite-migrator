@@ -3,28 +3,45 @@
 export interface Typegen0 {
   '@@xstate/typegen': true
   internalEvents: {
-    'done.invoke.createShadowDbMachine': {
-      type: 'done.invoke.createShadowDbMachine'
+    '': { type: '' }
+    'done.invoke.createShadowDB': {
+      type: 'done.invoke.createShadowDB'
       data: unknown
       __tip: 'See the XState TS docs to learn how to strongly type this.'
     }
+    'done.invoke.runPendingMigrationMachine': {
+      type: 'done.invoke.runPendingMigrationMachine'
+      data: unknown
+      __tip: 'See the XState TS docs to learn how to strongly type this.'
+    }
+    'error.platform.createShadowDB': {
+      type: 'error.platform.createShadowDB'
+      data: unknown
+    }
     'xstate.init': { type: 'xstate.init' }
   }
-  invokeSrcNameMap: {}
+  invokeSrcNameMap: {
+    createShadowDB: 'done.invoke.createShadowDB'
+  }
   missingImplementations: {
-    actions: 'escalateError'
+    actions: never
     delays: never
     guards: never
-    services: 'createShadowDbMachine' | 'runPendingMigrationMachine'
+    services: 'runPendingMigrationMachine'
   }
   eventsCausingActions: {
-    escalateError: 'done.state.execute-migration-machine.cancelling'
+    deleteOriginalBAK: ''
+    escalateError:
+      | 'done.state.execute-migration-machine.cancelling'
+      | 'error.platform.createShadowDB'
+    renameOriginalDBToBAK: 'done.invoke.runPendingMigrationMachine'
+    renameShadowDBToDatabase: ''
   }
   eventsCausingDelays: {}
   eventsCausingGuards: {}
   eventsCausingServices: {
-    createShadowDbMachine: 'xstate.init'
-    runPendingMigrationMachine: 'done.invoke.createShadowDbMachine'
+    createShadowDB: 'xstate.init'
+    runPendingMigrationMachine: 'done.invoke.createShadowDB'
   }
   matchesStates:
     | 'cancelling'
@@ -33,11 +50,10 @@ export interface Typegen0 {
     | 'cancelling.done'
     | 'committing'
     | 'committing.delete original bak'
-    | 'committing.delete shadow db'
     | 'committing.done'
     | 'committing.original db migrated'
     | 'committing.rename original db to original bak'
-    | 'committing.rename shadow schema to original db'
+    | 'committing.rename shadow db to original db'
     | 'creating shadow db'
     | 'error'
     | 'migration success'
@@ -46,11 +62,10 @@ export interface Typegen0 {
         cancelling?: 'delete schema db' | 'delete shadow db' | 'done'
         committing?:
           | 'delete original bak'
-          | 'delete shadow db'
           | 'done'
           | 'original db migrated'
           | 'rename original db to original bak'
-          | 'rename shadow schema to original db'
+          | 'rename shadow db to original db'
       }
   tags: never
 }

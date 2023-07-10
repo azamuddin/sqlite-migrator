@@ -9,6 +9,21 @@ export interface Typegen0 {
       data: unknown
       __tip: 'See the XState TS docs to learn how to strongly type this.'
     }
+    'done.invoke.copyStructure': {
+      type: 'done.invoke.copyStructure'
+      data: unknown
+      __tip: 'See the XState TS docs to learn how to strongly type this.'
+    }
+    'done.invoke.getSchemaVersion': {
+      type: 'done.invoke.getSchemaVersion'
+      data: unknown
+      __tip: 'See the XState TS docs to learn how to strongly type this.'
+    }
+    'done.invoke.incrementSchemaDBUserVersion': {
+      type: 'done.invoke.incrementSchemaDBUserVersion'
+      data: unknown
+      __tip: 'See the XState TS docs to learn how to strongly type this.'
+    }
     'done.invoke.runNextPendingMigration': {
       type: 'done.invoke.runNextPendingMigration'
       data: unknown
@@ -16,6 +31,18 @@ export interface Typegen0 {
     }
     'error.platform.copyAndTransform': {
       type: 'error.platform.copyAndTransform'
+      data: unknown
+    }
+    'error.platform.copyStructure': {
+      type: 'error.platform.copyStructure'
+      data: unknown
+    }
+    'error.platform.getSchemaVersion': {
+      type: 'error.platform.getSchemaVersion'
+      data: unknown
+    }
+    'error.platform.incrementSchemaDBUserVersion': {
+      type: 'error.platform.incrementSchemaDBUserVersion'
       data: unknown
     }
     'error.platform.runNextPendingMigration': {
@@ -26,27 +53,29 @@ export interface Typegen0 {
   }
   invokeSrcNameMap: {
     copyAndTransform: 'done.invoke.copyAndTransform'
+    copyStructure: 'done.invoke.copyStructure'
+    getSchemaVersion: 'done.invoke.getSchemaVersion'
+    incrementSchemaDBUserVersion: 'done.invoke.incrementSchemaDBUserVersion'
     runNextPendingMigration: 'done.invoke.runNextPendingMigration'
   }
   missingImplementations: {
-    actions:
-      | 'checkPendingMigrations'
-      | 'deleteShadowDb'
-      | 'escalateError'
-      | 'renameSchemaDbToShadow'
-      | 'updateUserVersion'
+    actions: never
     delays: never
-    guards: 'hasNextPendingMigration'
-    services: 'copyAndTransform' | 'runNextPendingMigration'
+    guards: never
+    services: never
   }
   eventsCausingActions: {
-    checkPendingMigrations: ''
-    deleteShadowDb: ''
+    assignSchemaVersion: 'done.invoke.getSchemaVersion'
+    createSchemaDB: '' | 'xstate.init'
+    deleteShadowDb: 'done.invoke.incrementSchemaDBUserVersion'
     escalateError:
       | 'error.platform.copyAndTransform'
+      | 'error.platform.copyStructure'
+      | 'error.platform.getSchemaVersion'
+      | 'error.platform.incrementSchemaDBUserVersion'
       | 'error.platform.runNextPendingMigration'
+    incrementContextSchemaVersion: 'done.invoke.incrementSchemaDBUserVersion'
     renameSchemaDbToShadow: ''
-    updateUserVersion: 'done.invoke.copyAndTransform'
   }
   eventsCausingDelays: {}
   eventsCausingGuards: {
@@ -54,11 +83,16 @@ export interface Typegen0 {
   }
   eventsCausingServices: {
     copyAndTransform: 'done.invoke.runNextPendingMigration'
-    runNextPendingMigration: ''
+    copyStructure: 'done.invoke.getSchemaVersion'
+    getSchemaVersion: ''
+    incrementSchemaDBUserVersion: 'done.invoke.copyAndTransform'
+    runNextPendingMigration: 'done.invoke.copyStructure'
   }
   matchesStates:
+    | 'assign schema version'
     | 'check next migration'
     | 'copy & transform data'
+    | 'copy structure only'
     | 'create schema db'
     | 'delete shadow db'
     | 'done'

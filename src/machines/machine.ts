@@ -14,7 +14,6 @@ export type MigrationMachineContext = {
   migrationDir: string
   _dbExist: boolean
   _latestVersion: number
-  _schemaVersion: number
   _userVersion: number
 }
 
@@ -42,7 +41,6 @@ export const migrationMachine = createMachine(
       _dbExist: false,
       _userVersion: 0,
       _latestVersion: 1,
-      _schemaVersion: 1,
     },
     predictableActionArguments: true,
     preserveActionOrder: true,
@@ -116,6 +114,7 @@ export const migrationMachine = createMachine(
         invoke: {
           src: executeMigrationMachine,
           id: 'executeMigrationMachine',
+          data: (context) => context,
           onDone: [
             {
               target: 'done',
@@ -165,9 +164,9 @@ export const migrationMachine = createMachine(
         return result.rows?.[0]?.user_version
       },
       executeMigrationMachine,
-      runFreshMigration: runFreshMigration(
-        async (migration, db) => await migration.up(db),
-      ),
+      runFreshMigration: runFreshMigration(async (migration, db) => {
+        await migration.up(db)
+      }),
     },
     guards: {
       hasNextPendingMigration: (context) => {

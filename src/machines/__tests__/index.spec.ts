@@ -1,19 +1,20 @@
 import path, { dirname } from 'path'
 import { describe, beforeEach, it, expect, afterEach } from 'vitest'
 import { interpret } from 'xstate'
+import Database from 'better-sqlite3'
+import { existsSync, mkdirSync, rmdirSync } from 'fs'
+
 import { MigrationMachineContext, migrationMachine } from '../machine'
 import { logger } from '../../utils/logger'
-import { existsSync, mkdirSync, rmdir, rmdirSync, unlinkSync } from 'fs'
 import { createDB as createDB } from '../../utils/sqlite-factory'
 import { Kysely, sql } from 'kysely'
-import { runFreshMigration } from '../../shared/migrations'
+import { getLatestMigration, runFreshMigration } from '../../shared/migrations'
 import { Migration } from '../../types'
 import createUsersTable from './migrations/1/2023_07_08_133201-create-users-table'
-import Database from 'better-sqlite3'
 
 logger.setLevel('debug')
 
-const DB_PATH = path.resolve(__dirname, './db/database.sql')
+const DB_PATH = path.resolve(__dirname, './db/database.sqlite')
 const MIGRATION_DIR = path.resolve(__dirname, './migrations')
 const createMigrationActor = (
   config?: Parameters<(typeof migrationMachine)['withConfig']>[0],
@@ -162,6 +163,7 @@ describe('Migration machine', () => {
       expect(version).toEqual(2)
     })
   })
+
   describe('When database already exists', () => {
     type Context = { db: Kysely<any> }
     beforeEach<Context>((context) => {
@@ -219,23 +221,69 @@ describe('Migration machine', () => {
         sqlite.exec(`PRAGMA user_version = 1`)
       })
       it<Context>('should run pending migration successfully', async (context) => {
-        const getResult = async () => {
+        const getResult = async (): Promise<{
+          userVersion: number
+          createdAt: boolean
+          updatedAt: boolean
+          deletedAt: boolean
+        }> => {
           logger.debug('get result')
-          return new Promise((resolve) => {
+          return new Promise((resolve, reject) => {
             const actor = createMigrationActor().start()
-            actor.onTransition((state) => {
+            actor.onTransition(async (state) => {
               logger.debug(state.toStrings(), 'STATE')
               if (state.matches('run pending migration')) {
-                resolve(true)
+                const executeMigrationMachine =
+                  state.children['executeMigrationMachine']
+                executeMigrationMachine.subscribe((state) => {
+                  logger.debug(state.value, 'STATE executeMigrationMachine')
+                  if (state.matches('running pending migrations')) {
+                    const pendingMigrationMachine =
+                      state.children['runPendingMigrationMachine']
+                    pendingMigrationMachine.onTransition((state) => {
+                      logger.debug(
+                        state.value,
+                        'STATE runPendingMigrationMachine',
+                      )
+                    })
+                  }
+                })
+              }
+              if (state.matches('migration failed')) {
+                reject()
               }
               if (state.matches('done')) {
-                resolve(false)
+                const db = createDB(DB_PATH)
+                // user version
+                const versions = await sql<{
+                  user_version: number
+                }>`PRAGMA user_version`.execute(db)
+                const userVersion = versions.rows[0].user_version
+                // columns
+                const { rows: columns } = await sql<{
+                  name: string
+                }>`PRAGMA table_info(users)`.execute(db)
+                const createdAt = columns.find((col) => col.name == 'createdAt')
+                const updatedAt = columns.find((col) => col.name == 'updatedAt')
+                const deletedAt = columns.find(
+                  (col) => col.name === 'deletedAt',
+                )
+                resolve({
+                  userVersion,
+                  createdAt: Boolean(createdAt),
+                  updatedAt: Boolean(updatedAt),
+                  deletedAt: Boolean(deletedAt),
+                })
               }
             })
           })
         }
         const result = await getResult()
-        expect(result, 'run pending migration').toBeTruthy()
+        const actualLatestVersion = getLatestMigration(MIGRATION_DIR)
+        expect(result.createdAt, 'createdAt must exist').toBeTruthy()
+        expect(result.updatedAt, 'updatedAt must exist').toBeTruthy()
+        expect(result.deletedAt, 'deletedAt must exist').toBeTruthy()
+        expect(result.userVersion, 'user version').toEqual(actualLatestVersion)
       })
     })
   })

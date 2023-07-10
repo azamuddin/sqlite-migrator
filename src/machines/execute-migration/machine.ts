@@ -1,109 +1,145 @@
-import { createMachine } from "xstate";
-import { createShadowDbMachine } from "../create-shadow-db/machine";
-import { runPendingMigrationMachine } from "../run-pending-migration/machine";
+import { createMachine } from 'xstate'
+import { Kysely } from 'kysely'
+import { escalate } from 'xstate/lib/actions'
+import path, { dirname, resolve } from 'path'
+import { createDB } from '../../utils/sqlite-factory'
+import { runPendingMigrationMachine } from '../run-pending-migration/machine'
+import { MigrationMachineContext } from '../machine'
+import { copyDatabase, renameDatabase } from '../../shared/copy-database'
+import { unlinkSync } from 'fs'
 
-export const executeMigrationMachine = createMachine({
-  id: "execute-migration-machine",
-  tsTypes: {} as import("./machine.typegen").Typegen0,
-  schema: {},
-  predictableActionArguments: true,
-  preserveActionOrder: true,
-  initial: "creating shadow db",
-  states: {
-    "creating shadow db": {
-      invoke: {
-        src: createShadowDbMachine,
-        id: "createShadowDbMachine",
-        onDone: [
-          {
-            target: "running pending migrations",
-          },
-        ],
-        onError: [
-          {
-            target: "cancelling",
-          },
-        ],
-      },
+export type ExecuteMigrationMachineContext = MigrationMachineContext & {
+  _shadowDB: Kysely<any>
+}
+
+export const executeMigrationMachine = createMachine(
+  {
+    id: 'execute-migration-machine',
+    tsTypes: {} as import('./machine.typegen').Typegen0,
+    schema: {
+      context: {} as ExecuteMigrationMachineContext,
     },
-    "running pending migrations": {
-      invoke: {
-        src: runPendingMigrationMachine,
-        id: "runPendingMigrationMachine",
-        onDone: [
-          {
-            target: "committing",
+    predictableActionArguments: true,
+    preserveActionOrder: true,
+    initial: 'creating shadow db',
+    states: {
+      'creating shadow db': {
+        invoke: {
+          src: 'createShadowDB',
+          id: 'createShadowDB',
+          onDone: {
+            target: 'running pending migrations',
           },
-        ],
-        onError: [
-          {
-            target: "cancelling",
+          onError: {
+            target: 'error',
           },
-        ],
-      },
-    },
-    committing: {
-      initial: "delete shadow db",
-      states: {
-        "delete shadow db": {
-          always: {
-            target: "rename original db to original bak",
-          },
-        },
-        "rename original db to original bak": {
-          always: {
-            target: "rename shadow schema to original db",
-          },
-        },
-        "rename shadow schema to original db": {
-          always: {
-            target: "original db migrated",
-          },
-        },
-        "original db migrated": {
-          always: {
-            target: "delete original bak",
-          },
-        },
-        "delete original bak": {
-          always: {
-            target: "done",
-          },
-        },
-        done: {
-          type: "final",
         },
       },
-      onDone: {
-        target: "migration success",
+      'running pending migrations': {
+        invoke: {
+          src: runPendingMigrationMachine,
+          id: 'runPendingMigrationMachine',
+          data: (context) => context,
+          onDone: [
+            {
+              target: 'committing',
+            },
+          ],
+          onError: [
+            {
+              target: 'cancelling',
+            },
+          ],
+        },
       },
-    },
-    cancelling: {
-      initial: "delete shadow db",
-      states: {
-        "delete shadow db": {
-          always: {
-            target: "delete schema db",
+      committing: {
+        initial: 'rename original db to original bak',
+        states: {
+          'rename original db to original bak': {
+            entry: ['renameOriginalDBToBAK'],
+            always: {
+              target: 'rename shadow db to original db',
+            },
+          },
+          'rename shadow db to original db': {
+            entry: ['renameShadowDBToDatabase'],
+            always: {
+              target: 'original db migrated',
+            },
+          },
+          'original db migrated': {
+            always: {
+              target: 'delete original bak',
+            },
+          },
+          'delete original bak': {
+            entry: ['deleteOriginalBAK'],
+            always: {
+              target: 'done',
+            },
+          },
+          done: {
+            type: 'final',
           },
         },
-        "delete schema db": {
-          always: {
-            target: "done",
+        onDone: {
+          target: 'migration success',
+        },
+      },
+      cancelling: {
+        initial: 'delete shadow db',
+        states: {
+          'delete shadow db': {
+            always: {
+              target: 'delete schema db',
+            },
+          },
+          'delete schema db': {
+            always: {
+              target: 'done',
+            },
+          },
+          done: {
+            type: 'final',
           },
         },
-        done: {
-          type: "final",
+        onDone: {
+          target: 'error',
         },
       },
-      onDone: {
-        target: "error",
+      'migration success': {
+        type: 'final',
       },
-    },
-    "migration success": {
-      type: "final",
-    },
-    error: {
-      entry: "escalateError",
+      error: {
+        entry: 'escalateError',
+      },
     },
   },
-});
+  {
+    actions: {
+      renameOriginalDBToBAK: (context) => {
+        renameDatabase(context.dbPath, 'original.bak.sqlite')
+      },
+      renameShadowDBToDatabase: (context) => {
+        renameDatabase(
+          resolve(dirname(context.dbPath), 'shadow.sqlite'),
+          'database.sqlite',
+        )
+      },
+      deleteOriginalBAK: (context) => {
+        unlinkSync(resolve(dirname(context.dbPath), 'original.bak.sqlite'))
+        unlinkSync(resolve(dirname(context.dbPath), 'original.bak.sqlite-shm'))
+        unlinkSync(resolve(dirname(context.dbPath), 'original.bak.sqlite-wal'))
+      },
+      escalateError: escalate({ message: 'execute migration failed' }),
+    },
+    services: {
+      createShadowDB: async (context) => {
+        copyDatabase(context.dbPath, 'shadow.sqlite')
+        context._shadowDB = createDB(
+          path.resolve(dirname(context.dbPath), 'shadow.sqlite'),
+        )
+      },
+    },
+  },
+)
