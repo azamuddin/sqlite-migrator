@@ -14,7 +14,11 @@ import Database from 'better-sqlite3'
 import { renameDatabase } from '../../shared/copy-database'
 
 const copyAndTransform = (
-  runner: (migration: Migration, db: Kysely<any>) => Promise<void>,
+  runner: (
+    migration: Migration,
+    source: Kysely<any>,
+    db: Kysely<any>,
+  ) => Promise<void>,
 ) => {
   return async (context: RunPendingMigrationContext) => {
     const migrationFiles = getMigrations(
@@ -29,7 +33,8 @@ const copyAndTransform = (
           fileName,
         )
       )
-      runner(migration, context._schemaDB)
+      const source = createDB(resolve(dirname(context.dbPath), 'shadow.sqlite'))
+      runner(migration, source, context._schemaDB)
     })
   }
 }
@@ -259,9 +264,9 @@ export const runPendingMigrationMachine = createMachine(
           await migration.up(db)
         },
       ),
-      copyAndTransform: copyAndTransform(async (migration, db) => {
+      copyAndTransform: copyAndTransform(async (migration, source, db) => {
         logger.debug('runPendingMigrationMachine.services.copyAndTransform')
-        await migration.transform(db)
+        await migration.transform(source, db)
       }),
       incrementSchemaDBUserVersion: async (context) => {
         const sqlite = new Database(
