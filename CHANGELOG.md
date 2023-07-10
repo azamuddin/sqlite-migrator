@@ -1,5 +1,17 @@
 # sqlite-migrator
 
+## 0.4.0
+
+### Minor Changes
+
+- Feat: basic functionality works
+
+## 0.3.0
+
+### Minor Changes
+
+- Migrate and transform functionality works
+
 ## 0.2.2
 
 ### Patch Changes
