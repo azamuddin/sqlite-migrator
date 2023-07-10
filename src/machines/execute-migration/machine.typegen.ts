@@ -18,6 +18,10 @@ export interface Typegen0 {
       type: 'error.platform.createShadowDB'
       data: unknown
     }
+    'error.platform.runPendingMigrationMachine': {
+      type: 'error.platform.runPendingMigrationMachine'
+      data: unknown
+    }
     'xstate.init': { type: 'xstate.init' }
   }
   invokeSrcNameMap: {
@@ -31,6 +35,8 @@ export interface Typegen0 {
   }
   eventsCausingActions: {
     deleteOriginalBAK: ''
+    deleteSchemaDB: ''
+    deleteShadowDB: 'error.platform.runPendingMigrationMachine'
     escalateError:
       | 'done.state.execute-migration-machine.cancelling'
       | 'error.platform.createShadowDB'

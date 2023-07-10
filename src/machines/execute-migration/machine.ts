@@ -90,11 +90,13 @@ export const executeMigrationMachine = createMachine(
         initial: 'delete shadow db',
         states: {
           'delete shadow db': {
+            entry: ['deleteShadowDB'],
             always: {
               target: 'delete schema db',
             },
           },
           'delete schema db': {
+            entry: ['deleteSchemaDB'],
             always: {
               target: 'done',
             },
@@ -130,6 +132,16 @@ export const executeMigrationMachine = createMachine(
         unlinkSync(resolve(dirname(context.dbPath), 'original.bak.sqlite'))
         unlinkSync(resolve(dirname(context.dbPath), 'original.bak.sqlite-shm'))
         unlinkSync(resolve(dirname(context.dbPath), 'original.bak.sqlite-wal'))
+      },
+      deleteShadowDB: (context) => {
+        unlinkSync(resolve(dirname(context.dbPath), 'shadow.sqlite'))
+        unlinkSync(resolve(dirname(context.dbPath), 'shadow.sqlite-shm'))
+        unlinkSync(resolve(dirname(context.dbPath), 'shadow.sqlite-wal'))
+      },
+      deleteSchemaDB: (context) => {
+        unlinkSync(resolve(dirname(context.dbPath), 'schema.sqlite'))
+        unlinkSync(resolve(dirname(context.dbPath), 'schema.sqlite-shm'))
+        unlinkSync(resolve(dirname(context.dbPath), 'schema.sqlite-wal'))
       },
       escalateError: escalate({ message: 'execute migration failed' }),
     },
