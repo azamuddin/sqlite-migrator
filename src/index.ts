@@ -19,9 +19,9 @@ const migrate = (options: MigrationOptions) => {
       dbPath: dbPath,
       debug: debug,
       migrationDir: migrationDir,
-      _latestVersion: null,
-      _schemaVersion: null,
-      _userVersion: null,
+      _latestVersion: 1,
+      _schemaVersion: 1,
+      _userVersion: 0,
       _dbExist: false,
     }),
   )

@@ -36,6 +36,7 @@ export interface Typegen0 {
   }
   eventsCausingActions: {
     assignDatabaseExist: 'xstate.init'
+    assignLatestVersion: 'xstate.init'
     assignUserVersion: 'done.invoke.getUserVersion'
     updateUserVersion: 'done.invoke.runFreshMigration'
   }
@@ -53,11 +54,11 @@ export interface Typegen0 {
     | 'check database exist'
     | 'compare user version'
     | 'done'
-    | 'execute migration'
     | 'get user version'
     | 'initial'
     | 'migration failed'
     | 'run fresh migration'
+    | 'run pending migration'
     | 'update user version'
   tags: never
 }

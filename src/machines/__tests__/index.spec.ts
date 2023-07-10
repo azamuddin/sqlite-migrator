@@ -8,6 +8,8 @@ import { createDB as createDB } from '../../utils/sqlite-factory'
 import { Kysely, sql } from 'kysely'
 import { runFreshMigration } from '../../shared/migrations'
 import { Migration } from '../../types'
+import createUsersTable from './migrations/1/2023_07_08_133201-create-users-table'
+import Database from 'better-sqlite3'
 
 logger.setLevel('debug')
 
@@ -15,7 +17,7 @@ const DB_PATH = path.resolve(__dirname, './db/database.sql')
 const MIGRATION_DIR = path.resolve(__dirname, './migrations')
 const createMigrationActor = (
   config?: Parameters<(typeof migrationMachine)['withConfig']>[0],
-  context?: MigrationMachineContext,
+  context?: Partial<MigrationMachineContext>,
 ) => {
   let machine = migrationMachine
   if (config) {
@@ -23,17 +25,29 @@ const createMigrationActor = (
   }
   return interpret(
     machine.withContext(
-      context ?? {
-        dbPath: DB_PATH,
-        debug: true,
-        migrationDir: MIGRATION_DIR,
-        _dbExist: false,
-        _userVersion: null,
-        _schemaVersion: null,
-        _latestVersion: null,
-      },
+      context
+        ? { ...machine.context, ...context }
+        : {
+            ...machine.context,
+            dbPath: DB_PATH,
+            debug: true,
+            migrationDir: MIGRATION_DIR,
+          },
     ),
   )
+}
+
+const runMigrationAsync = async () => {
+  logger.debug('runMigrationAsync START')
+  return new Promise((resolve) => {
+    const actor = createMigrationActor().start()
+    actor.onTransition((state) => {
+      logger.debug(state.toStrings())
+      if (state.matches('done')) {
+        resolve(true)
+      }
+    })
+  })
 }
 
 describe('Migration machine', () => {
@@ -148,7 +162,7 @@ describe('Migration machine', () => {
       expect(version).toEqual(2)
     })
   })
-  describe.skip('When database already exists', () => {
+  describe('When database already exists', () => {
     type Context = { db: Kysely<any> }
     beforeEach<Context>((context) => {
       if (!existsSync(dirname(DB_PATH))) {
@@ -162,13 +176,23 @@ describe('Migration machine', () => {
       }
     })
     describe('When user schema already latest', () => {
+      beforeEach(async () => {
+        // setup database such that it is already latest
+        if (existsSync(DB_PATH)) {
+          rmdirSync(dirname(DB_PATH), { recursive: true })
+        }
+        if (!existsSync(dirname(DB_PATH))) {
+          mkdirSync(dirname(DB_PATH))
+        }
+        await runMigrationAsync()
+      })
       it('should not do migration', async () => {
         const getResult = async () => {
           return new Promise((resolve) => {
             const actor = createMigrationActor().start()
             actor.onTransition((state) => {
               logger.debug(state.toStrings(), 'STATE VALUE')
-              if (state.matches('execute migration')) {
+              if (state.matches('run pending migration')) {
                 resolve(true)
               }
               if (state.matches('run fresh migration')) {
@@ -181,20 +205,27 @@ describe('Migration machine', () => {
           })
         }
         const result = await getResult()
-        expect(result).toBeFalsy()
+        expect(result, 'migration run').toBeFalsy()
       })
     })
 
     describe('Else', () => {
-      beforeEach(() => {
-        const actor = createMigrationActor().start()
+      beforeEach(async () => {
+        // setup such that user version is ONE (1)
+        const db = createDB(DB_PATH)
+        await createUsersTable.up(db)
+        await createUsersTable.transform(db)
+        const sqlite = new Database(DB_PATH)
+        sqlite.exec(`PRAGMA user_version = 1`)
       })
       it<Context>('should run pending migration successfully', async (context) => {
         const getResult = async () => {
+          logger.debug('get result')
           return new Promise((resolve) => {
             const actor = createMigrationActor().start()
             actor.onTransition((state) => {
-              if (state.matches('execute migration')) {
+              logger.debug(state.toStrings(), 'STATE')
+              if (state.matches('run pending migration')) {
                 resolve(true)
               }
               if (state.matches('done')) {
@@ -204,7 +235,7 @@ describe('Migration machine', () => {
           })
         }
         const result = await getResult()
-        expect(result).toBeTruthy()
+        expect(result, 'run pending migration').toBeTruthy()
       })
     })
   })

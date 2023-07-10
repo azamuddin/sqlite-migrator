@@ -12,7 +12,15 @@ export const createDB = <DatabaseSchema = any>(path: string) => {
     dialect,
     log: (event) => {
       if (event.level === 'query') {
-        logger.color('red').bgColor('blue').debug(event.query.sql)
+        if (logger.level === 'debug') {
+          logger
+            .color('cyan')
+            .log('QUERY')
+            .joint()
+            .color('red')
+            .bgColor('blue')
+            .log(event.query.sql)
+        }
       }
     },
   })

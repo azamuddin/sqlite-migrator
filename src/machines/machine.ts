@@ -13,9 +13,9 @@ export type MigrationMachineContext = {
   debug: boolean
   migrationDir: string
   _dbExist: boolean
-  _latestVersion: number | null
-  _schemaVersion: number | null
-  _userVersion: number | null
+  _latestVersion: number
+  _schemaVersion: number
+  _userVersion: number
 }
 
 export type MigrationMachineServiceMap = {
@@ -40,16 +40,16 @@ export const migrationMachine = createMachine(
       debug: false,
       migrationDir: '',
       _dbExist: false,
-      _userVersion: null,
-      _latestVersion: null,
-      _schemaVersion: null,
+      _userVersion: 0,
+      _latestVersion: 1,
+      _schemaVersion: 1,
     },
     predictableActionArguments: true,
     preserveActionOrder: true,
     initial: 'initial',
     states: {
       initial: {
-        entry: 'assignDatabaseExist',
+        entry: ['assignDatabaseExist', 'assignLatestVersion'],
         always: {
           target: 'check database exist',
         },
@@ -82,7 +82,7 @@ export const migrationMachine = createMachine(
         description: 'compare user version and latest app version',
         always: [
           {
-            target: 'execute migration',
+            target: 'run pending migration',
             cond: 'hasNextPendingMigration',
           },
           {
@@ -112,7 +112,7 @@ export const migrationMachine = createMachine(
           target: 'done',
         },
       },
-      'execute migration': {
+      'run pending migration': {
         invoke: {
           src: executeMigrationMachine,
           id: 'executeMigrationMachine',
@@ -137,13 +137,19 @@ export const migrationMachine = createMachine(
   {
     actions: {
       assignDatabaseExist: assign((context) => {
-        logger.info('migrationMachine.actions.assignDatabaseExist')
-        context._dbExist = fs.existsSync(context.dbPath)
+        const exists = fs.existsSync(context.dbPath)
+        logger.debug('migrationMachine.actions.assignDatabaseExist', exists)
+        context._dbExist = exists
+      }),
+      assignLatestVersion: assign((context) => {
+        context._latestVersion = getLatestMigration(context.migrationDir)
       }),
       assignUserVersion: assign((context, event) => {
+        logger.debug('migrationMachine.actions.assignUserVersion', event.data)
         context._userVersion = event.data
       }),
       updateUserVersion: assign(async (context) => {
+        logger.debug('migrationMachine.actions.updateUserVersion')
         const db = new Database(context.dbPath)
         const latest = getLatestMigration(context.migrationDir)
         db.exec(`PRAGMA user_version = ${latest}`)
@@ -155,7 +161,7 @@ export const migrationMachine = createMachine(
         const result = await sql<{
           user_version: number
         }>`PRAGMA user_version`.execute(db)
-        logger.info('MIGRATION ACTOR.services.getUserVersion', result.rows)
+        logger.debug('MIGRATION ACTOR.services.getUserVersion', result.rows)
         return result.rows?.[0]?.user_version
       },
       executeMigrationMachine,
@@ -164,8 +170,13 @@ export const migrationMachine = createMachine(
       ),
     },
     guards: {
-      hasNextPendingMigration: () => {
-        return false
+      hasNextPendingMigration: (context) => {
+        logger.debug(
+          'migrationMachine.guards.hasNextPendingMigration',
+          context._userVersion,
+          context._latestVersion,
+        )
+        return context._userVersion < context._latestVersion
       },
       databaseExists: (context) => context._dbExist,
     },
