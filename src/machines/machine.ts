@@ -6,7 +6,7 @@ import { executeMigrationMachine } from './execute-migration/machine'
 import { createDB } from '../utils/sqlite-factory'
 import { logger } from '../utils/logger'
 import { getLatestMigration, runFreshMigration } from '../shared/migrations'
-import Database from 'better-sqlite3'
+import Sqlite from 'better-sqlite3'
 
 export type MigrationMachineContext = {
   dbPath: string
@@ -149,7 +149,7 @@ export const migrationMachine = createMachine(
       }),
       updateUserVersion: assign(async (context) => {
         logger.debug('migrationMachine.actions.updateUserVersion')
-        const db = new Database(context.dbPath)
+        const db = new Sqlite(context.dbPath)
         const latest = getLatestMigration(context.migrationDir)
         db.exec(`PRAGMA user_version = ${latest}`)
       }),

@@ -10,7 +10,7 @@ import { getMigrations } from '../../shared/migrations'
 import { asyncForEach } from '../../utils/async-foreach'
 import { logger } from '../../utils/logger'
 import { escalate } from 'xstate/lib/actions'
-import Database from 'better-sqlite3'
+import Sqlite from 'better-sqlite3'
 import { renameDatabase } from '../../shared/copy-database'
 
 const copyAndTransform = (
@@ -273,7 +273,7 @@ export const runPendingMigrationMachine = createMachine(
         await migration.transform(source, db)
       }),
       incrementSchemaDBUserVersion: async (context) => {
-        const sqlite = new Database(
+        const sqlite = new Sqlite(
           resolve(dirname(context.dbPath), 'schema.sqlite'),
         )
         sqlite.exec(`PRAGMA user_version = ${context._schemaVersion + 1}`)

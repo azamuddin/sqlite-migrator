@@ -1,7 +1,7 @@
 import path, { dirname } from 'path'
 import { describe, beforeEach, it, expect, afterEach } from 'vitest'
 import { interpret } from 'xstate'
-import Database from 'better-sqlite3'
+import Sqlite from 'better-sqlite3'
 import { existsSync, mkdirSync, rmdirSync } from 'fs'
 
 import { MigrationMachineContext, migrationMachine } from '../machine'
@@ -218,7 +218,7 @@ describe('Migration machine', () => {
         // setup such that user version is ONE (1)
         const db = createDB(DB_PATH)
         await createUsersTable.up(db)
-        const sqlite = new Database(DB_PATH)
+        const sqlite = new Sqlite(DB_PATH)
         sqlite.exec(`PRAGMA user_version = 1`)
       })
       it<Context>('should run pending migration successfully', async () => {

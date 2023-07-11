@@ -28,4 +28,10 @@ module.exports = {
   plugins: ['@typescript-eslint'],
   rules: {},
   ignorePatterns: ['**/**/machine.typegen.ts', 'prettier.config.js'],
+  settings: {
+    'import/resolver': {
+      typescript: true,
+      node: true,
+    },
+  },
 }

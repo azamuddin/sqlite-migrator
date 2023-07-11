@@ -1,10 +1,10 @@
-import Database from 'better-sqlite3'
+import Sqlite from 'better-sqlite3'
 import { Kysely, SqliteDialect } from 'kysely'
 import logger from 'node-color-log'
 
 // eslint-disable-next-line
 export const createDB = <DatabaseSchema = any>(path: string) => {
-  const sqlite = new Database(path)
+  const sqlite = new Sqlite(path)
   sqlite.pragma('journal_mode = WAL')
   const dialect = new SqliteDialect({
     database: sqlite,
