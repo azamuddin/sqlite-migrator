@@ -5,8 +5,9 @@ import { logger } from './utils/logger'
 
 type MigrationOptions = Pick<
   MigrationMachineContext,
-  'migrationDir' | 'debug' | 'dbPath'
->
+  'migrationDir' | 'dbPath'
+> & {debug?: boolean}
+
 
 const migrate = (options: MigrationOptions) => {
   const { dbPath, migrationDir, debug = false } = options
@@ -27,5 +28,6 @@ const migrate = (options: MigrationOptions) => {
   )
   migrationActor.start()
 }
+
 
 export { migrate }
