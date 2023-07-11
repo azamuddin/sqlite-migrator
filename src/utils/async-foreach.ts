@@ -4,7 +4,7 @@ export const asyncForEach = async <T>(
 ) => {
   return await Promise.all(
     data.map((item) => {
-      return new Promise(async (resolve) => resolve(await predicate(item)))
+      return new Promise((resolve) => resolve(predicate(item)))
     }),
   )
 }

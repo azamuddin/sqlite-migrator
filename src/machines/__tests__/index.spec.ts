@@ -118,6 +118,7 @@ describe('Migration machine', () => {
           const migrationsRun: string[] = []
           const mockedRunner = async (
             migration: Migration,
+            //eslint-disable-next-line @typescript-eslint/no-explicit-any
             db: Kysely<any>,
             filePath: string,
           ) => {
@@ -165,6 +166,7 @@ describe('Migration machine', () => {
   })
 
   describe('When database already exists', () => {
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
     type Context = { db: Kysely<any> }
     beforeEach<Context>((context) => {
       if (!existsSync(dirname(DB_PATH))) {
@@ -219,7 +221,7 @@ describe('Migration machine', () => {
         const sqlite = new Database(DB_PATH)
         sqlite.exec(`PRAGMA user_version = 1`)
       })
-      it<Context>('should run pending migration successfully', async (context) => {
+      it<Context>('should run pending migration successfully', async () => {
         const getResult = async (): Promise<{
           userVersion: number
           createdAt: boolean

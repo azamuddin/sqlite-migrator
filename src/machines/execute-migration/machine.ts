@@ -9,6 +9,7 @@ import { copyDatabase, renameDatabase } from '../../shared/copy-database'
 import { unlinkSync } from 'fs'
 
 export type ExecuteMigrationMachineContext = MigrationMachineContext & {
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
   _shadowDB: Kysely<any>
 }
 

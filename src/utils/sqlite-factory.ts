@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { Kysely, SqliteDialect } from 'kysely'
 import logger from 'node-color-log'
 
+// eslint-disable-next-line
 export const createDB = <DatabaseSchema = any>(path: string) => {
   const sqlite = new Database(path)
   sqlite.pragma('journal_mode = WAL')

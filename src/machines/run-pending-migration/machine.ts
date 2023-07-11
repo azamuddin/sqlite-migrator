@@ -16,7 +16,9 @@ import { renameDatabase } from '../../shared/copy-database'
 const copyAndTransform = (
   runner: (
     migration: Migration,
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
     source: Kysely<any>,
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
     db: Kysely<any>,
   ) => Promise<void>,
 ) => {
@@ -40,6 +42,7 @@ const copyAndTransform = (
 }
 
 const runNextPendingMigration = (
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
   runner: (migration: Migration, db: Kysely<any>) => Promise<void>,
 ) => {
   return async (context: RunPendingMigrationContext) => {
@@ -65,6 +68,7 @@ type RunPendingMigrationContext = Pick<
   MigrationMachineContext,
   'dbPath' | 'migrationDir' | '_latestVersion'
 > & {
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
   _schemaDB: Kysely<any>
   _schemaVersion: number
 }

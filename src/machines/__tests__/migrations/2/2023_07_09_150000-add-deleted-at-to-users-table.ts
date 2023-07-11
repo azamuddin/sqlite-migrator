@@ -1,7 +1,8 @@
-import { Kysely, sql } from 'kysely'
+import { Kysely } from 'kysely'
 import { type Migration } from '../../../../types'
 import logger from 'node-color-log'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function up(db: Kysely<any>): Promise<void> {
   logger.info('add delete at to users up')
   return await db.schema
@@ -10,6 +11,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute()
 }
 
+// eslint-disable-next-line
 export async function transform(db: Kysely<any>): Promise<void> {}
 
 const migration: Migration = {

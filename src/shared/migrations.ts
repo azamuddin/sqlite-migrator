@@ -24,6 +24,7 @@ export const runFreshMigration =
   (
     migrationRunner: (
       migration: Migration,
+      //eslint-disable-next-line @typescript-eslint/no-explicit-any
       db: Kysely<any>,
       fileName: string,
     ) => Promise<void>,
