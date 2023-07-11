@@ -12,7 +12,7 @@ import { getLatestMigration, runFreshMigration } from '../../shared/migrations'
 import { Migration } from '../../types'
 import createUsersTable from './migrations/1/2023_07_08_133201-create-users-table'
 
-logger.setLevel('debug')
+logger.setLevel('info')
 
 const DB_PATH = path.resolve(__dirname, './db/database.sqlite')
 const MIGRATION_DIR = path.resolve(__dirname, './migrations')
@@ -216,7 +216,6 @@ describe('Migration machine', () => {
         // setup such that user version is ONE (1)
         const db = createDB(DB_PATH)
         await createUsersTable.up(db)
-        await createUsersTable.transform(db)
         const sqlite = new Database(DB_PATH)
         sqlite.exec(`PRAGMA user_version = 1`)
       })
