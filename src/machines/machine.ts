@@ -1,12 +1,16 @@
-import { assign } from '@xstate/immer'
 import fs from 'fs'
+
+import { assign } from '@xstate/immer'
 import { sql } from 'kysely'
 import { createMachine } from 'xstate'
-import { executeMigrationMachine } from './execute-migration/machine'
+import Sqlite from 'better-sqlite3'
+
 import { createDB } from '../utils/sqlite-factory'
 import { logger } from '../utils/logger'
 import { getLatestMigration, runFreshMigration } from '../shared/migrations'
-import Sqlite from 'better-sqlite3'
+
+import { executeMigrationMachine } from './execute-migration/machine'
+
 
 export type MigrationMachineContext = {
   dbPath: string

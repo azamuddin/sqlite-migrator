@@ -1,11 +1,14 @@
+import path from 'path'
+import { readdirSync } from 'fs'
+
 import logger from 'node-color-log'
+import { Kysely } from 'kysely'
+
 import { createDB } from '../utils/sqlite-factory'
 import { asyncForEach } from '../utils/async-foreach'
 import { MigrationMachineContext } from '../machines/machine'
-import path from 'path'
-import { readdirSync } from 'fs'
 import { Migration } from '../types'
-import { Kysely } from 'kysely'
+
 
 export const getLatestMigration = (migrationDir: string): number => {
   const migrationVersions = readdirSync(migrationDir)

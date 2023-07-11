@@ -1,6 +1,7 @@
 import { Kysely } from 'kysely'
-import { type Migration } from '../../../../types'
 import logger from 'node-color-log'
+
+import { type Migration } from '../../../../types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function up(db: Kysely<any>): Promise<void> {

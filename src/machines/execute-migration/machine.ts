@@ -1,12 +1,15 @@
+import path, { dirname, resolve } from 'path'
+import { unlinkSync } from 'fs'
+
 import { createMachine } from 'xstate'
 import { Kysely } from 'kysely'
 import { escalate } from 'xstate/lib/actions'
-import path, { dirname, resolve } from 'path'
+
 import { createDB } from '../../utils/sqlite-factory'
 import { runPendingMigrationMachine } from '../run-pending-migration/machine'
 import { MigrationMachineContext } from '../machine'
 import { copyDatabase, renameDatabase } from '../../shared/copy-database'
-import { unlinkSync } from 'fs'
+
 
 export type ExecuteMigrationMachineContext = MigrationMachineContext & {
   //eslint-disable-next-line @typescript-eslint/no-explicit-any

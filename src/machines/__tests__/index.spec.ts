@@ -1,15 +1,17 @@
 import path, { dirname } from 'path'
+import { existsSync, mkdirSync, rmdirSync } from 'fs'
+
 import { describe, beforeEach, it, expect, afterEach } from 'vitest'
 import { interpret } from 'xstate'
 import Sqlite from 'better-sqlite3'
-import { existsSync, mkdirSync, rmdirSync } from 'fs'
+import { Kysely, sql } from 'kysely'
 
 import { MigrationMachineContext, migrationMachine } from '../machine'
 import { logger } from '../../utils/logger'
 import { createDB as createDB } from '../../utils/sqlite-factory'
-import { Kysely, sql } from 'kysely'
 import { getLatestMigration, runFreshMigration } from '../../shared/migrations'
 import { Migration } from '../../types'
+
 import createUsersTable from './migrations/1/2023_07_08_133201-create-users-table'
 
 logger.setLevel('info')

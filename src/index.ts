@@ -1,4 +1,5 @@
 import { interpret } from 'xstate'
+
 import { MigrationMachineContext, migrationMachine } from './machines/machine'
 import { logger } from './utils/logger'
 

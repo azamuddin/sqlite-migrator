@@ -1,6 +1,7 @@
-import { defineConfig } from 'vite'
 import { builtinModules } from 'module'
 import path from 'path'
+
+import { defineConfig } from 'vite'
 
 module.exports = defineConfig({
   base: './',

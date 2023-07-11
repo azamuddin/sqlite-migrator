@@ -1,16 +1,18 @@
 import { dirname, resolve } from 'path'
-import { createMachine } from 'xstate'
-import { MigrationMachineContext } from '../machine'
-import { Kysely, sql } from 'kysely'
-import { createDB } from '../../utils/sqlite-factory'
-import { assign } from '@xstate/immer'
 import { existsSync, unlinkSync } from 'fs'
+
+import { createMachine } from 'xstate'
+import { Kysely, sql } from 'kysely'
+import { assign } from '@xstate/immer'
+import { escalate } from 'xstate/lib/actions'
+import Sqlite from 'better-sqlite3'
+
+import { MigrationMachineContext } from '../machine'
+import { createDB } from '../../utils/sqlite-factory'
 import { Migration } from '../../types'
 import { getMigrations } from '../../shared/migrations'
 import { asyncForEach } from '../../utils/async-foreach'
 import { logger } from '../../utils/logger'
-import { escalate } from 'xstate/lib/actions'
-import Sqlite from 'better-sqlite3'
 import { renameDatabase } from '../../shared/copy-database'
 
 const copyAndTransform = (

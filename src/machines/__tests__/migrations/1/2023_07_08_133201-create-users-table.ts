@@ -1,5 +1,6 @@
 import { Kysely } from 'kysely'
 import logger from 'node-color-log'
+
 import { type Migration } from '../../../../types'
 
 // eslint-disable-next-line
