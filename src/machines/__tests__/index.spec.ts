@@ -115,7 +115,7 @@ describe('Migration machine', () => {
     it('should run migrations in the correct order', async () => {
       const getResult = async (): Promise<string[]> => {
         return new Promise((resolve) => {
-          let migrationsRun: string[] = []
+          const migrationsRun: string[] = []
           const mockedRunner = async (
             migration: Migration,
             db: Kysely<any>,

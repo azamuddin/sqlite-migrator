@@ -237,7 +237,7 @@ export const runPendingMigrationMachine = createMachine(
             (_, index) => index + 1,
           ),
           async (version) => {
-            let migrationFiles = getMigrations(context.migrationDir, version)
+            const migrationFiles = getMigrations(context.migrationDir, version)
             await asyncForEach(migrationFiles, async (fileName) => {
               const migration = await import(
                 resolve(context.migrationDir, version.toString(), fileName)
@@ -251,7 +251,7 @@ export const runPendingMigrationMachine = createMachine(
         const shadowDB = createDB(
           resolve(dirname(context.dbPath), 'shadow.sqlite'),
         )
-        let currentVersion = await sql<{
+        const currentVersion = await sql<{
           user_version: number
         }>`PRAGMA user_version`.execute(shadowDB)
         return currentVersion.rows[0].user_version
