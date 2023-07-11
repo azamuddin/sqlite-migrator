@@ -9,64 +9,16 @@ import Sqlite from 'better-sqlite3'
 
 import { MigrationMachineContext } from '../machine'
 import { createDB } from '../../utils/sqlite-factory'
-import { Migration } from '../../types'
-import { getMigrations } from '../../shared/migrations'
+import {
+  copyAndTransform,
+  getMigrations,
+  runNextPendingMigration,
+} from '../../shared/migrations'
 import { asyncForEach } from '../../utils/async-foreach'
 import { logger } from '../../utils/logger'
 import { renameDatabase } from '../../shared/copy-database'
 
-const copyAndTransform = (
-  runner: (
-    migration: Migration,
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    source: Kysely<any>,
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    db: Kysely<any>,
-  ) => Promise<void>,
-) => {
-  return async (context: RunPendingMigrationContext) => {
-    const migrationFiles = getMigrations(
-      context.migrationDir,
-      context._schemaVersion + 1,
-    )
-    await asyncForEach(migrationFiles, async (fileName) => {
-      const migration = await import(
-        resolve(
-          context.migrationDir,
-          (context._schemaVersion + 1).toString(),
-          fileName,
-        )
-      )
-      const source = createDB(resolve(dirname(context.dbPath), 'shadow.sqlite'))
-      runner(migration.default, source, context._schemaDB)
-    })
-  }
-}
-
-const runNextPendingMigration = (
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
-  runner: (migration: Migration, db: Kysely<any>) => Promise<void>,
-) => {
-  return async (context: RunPendingMigrationContext) => {
-    logger.debug('runNextPendingMigration', context._schemaVersion + 1)
-    const migrationFiles = getMigrations(
-      context.migrationDir,
-      context._schemaVersion + 1,
-    )
-    await asyncForEach(migrationFiles, async (fileName) => {
-      const migration = await import(
-        resolve(
-          context.migrationDir,
-          (context._schemaVersion + 1).toString(),
-          fileName,
-        )
-      )
-      runner(migration.default, context._schemaDB)
-    })
-  }
-}
-
-type RunPendingMigrationContext = Pick<
+export type RunPendingMigrationContext = Pick<
   MigrationMachineContext,
   'dbPath' | 'migrationDir' | '_latestVersion'
 > & {

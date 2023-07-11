@@ -9,10 +9,17 @@ import { Kysely, sql } from 'kysely'
 import { MigrationMachineContext, migrationMachine } from '../machine'
 import { logger } from '../../utils/logger'
 import { createDB as createDB } from '../../utils/sqlite-factory'
-import { getLatestMigration, runFreshMigration } from '../../shared/migrations'
+import {
+  copyAndTransform,
+  getLatestMigration,
+  runFreshMigration,
+  runNextPendingMigration,
+} from '../../shared/migrations'
 import { Migration } from '../../types'
 
 import createUsersTable from './migrations/1/2023_07_08_133201-create-users-table'
+import { executeMigrationMachine } from '../execute-migration/machine'
+import { runPendingMigrationMachine } from '../run-pending-migration/machine'
 
 logger.setLevel('info')
 
@@ -287,6 +294,56 @@ describe('Migration machine', () => {
         expect(result.updatedAt, 'updatedAt must exist').toBeTruthy()
         expect(result.deletedAt, 'deletedAt must exist').toBeTruthy()
         expect(result.userVersion, 'user version').toEqual(actualLatestVersion)
+      })
+      it('should run transform after up on each schema version', async () => {
+        const getResult = async () => {
+          const calls: string[] = []
+          const mockedRunPendingMigration = async (
+            migration: Migration,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            db: Kysely<any>,
+          ) => {
+            calls.push('up')
+            await migration.up(db)
+          }
+          const mockedRunner = async (
+            migration: Migration,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            source: Kysely<any>,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            target: Kysely<any>,
+          ) => {
+            calls.push('transform')
+            await migration.transform(source, target)
+          }
+          return new Promise((resolve) => {
+            const actor = createMigrationActor({
+              services: {
+                executeMigrationMachine: executeMigrationMachine.withConfig({
+                  services: {
+                    runPendingMigrationMachine:
+                      runPendingMigrationMachine.withConfig({
+                        services: {
+                          runNextPendingMigration: runNextPendingMigration(
+                            mockedRunPendingMigration,
+                          ),
+                          copyAndTransform: copyAndTransform(mockedRunner),
+                        },
+                      }),
+                  },
+                }),
+              },
+            }).start()
+            actor.onTransition((state) => {
+              if (state.matches('done')) {
+                // to check something
+                resolve(calls)
+              }
+            })
+          })
+        }
+        const result = await getResult()
+        expect(result).toEqual(['up', 'up', 'transform', 'transform'])
       })
     })
   })
