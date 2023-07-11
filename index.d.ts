@@ -8,7 +8,9 @@ export type MigrationMachineContext = {
 	_latestVersion: number;
 	_userVersion: number;
 };
-export type MigrationOptions = Pick<MigrationMachineContext, "migrationDir" | "debug" | "dbPath">;
+export type MigrationOptions = Pick<MigrationMachineContext, "migrationDir" | "dbPath"> & {
+	debug?: boolean;
+};
 export declare const migrate: (options: MigrationOptions) => void;
 
 export {};

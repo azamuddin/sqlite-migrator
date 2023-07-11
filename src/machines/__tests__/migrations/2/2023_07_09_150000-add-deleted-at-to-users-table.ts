@@ -13,7 +13,10 @@ async function up(db: Kysely<any>): Promise<void> {
 }
 
 // eslint-disable-next-line
-async function transform(db: Kysely<any>): Promise<void> {}
+async function transform(
+  source: Kysely<any>,
+  target: Kysely<any>,
+): Promise<void> {}
 
 const migration: Migration = {
   up,
