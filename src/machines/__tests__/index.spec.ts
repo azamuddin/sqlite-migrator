@@ -16,10 +16,10 @@ import {
   runNextPendingMigration,
 } from '../../shared/migrations'
 import { Migration } from '../../types'
-
-import createUsersTable from './migrations/1/2023_07_08_133201-create-users-table'
 import { executeMigrationMachine } from '../execute-migration/machine'
 import { runPendingMigrationMachine } from '../run-pending-migration/machine'
+
+import createUsersTable from './migrations/1/2023_07_08_133201-create-users-table'
 
 logger.setLevel('info')
 

@@ -1,4 +1,4 @@
-import path, { dirname, resolve } from 'path'
+import path, { basename, dirname, resolve } from 'path'
 import { unlinkSync } from 'fs'
 
 import { createMachine } from 'xstate'
@@ -9,7 +9,6 @@ import { createDB } from '../../utils/sqlite-factory'
 import { runPendingMigrationMachine } from '../run-pending-migration/machine'
 import { MigrationMachineContext } from '../machine'
 import { copyDatabase, renameDatabase } from '../../shared/copy-database'
-
 
 export type ExecuteMigrationMachineContext = MigrationMachineContext & {
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -127,9 +126,10 @@ export const executeMigrationMachine = createMachine(
         renameDatabase(context.dbPath, 'original.bak.sqlite')
       },
       renameShadowDBToDatabase: (context) => {
+        const databaseName = basename(context.dbPath)
         renameDatabase(
           resolve(dirname(context.dbPath), 'shadow.sqlite'),
-          'database.sqlite',
+          databaseName,
         )
       },
       deleteOriginalBAK: (context) => {
