@@ -177,7 +177,7 @@ describe('Migration machine', () => {
         rmdirSync(dirname(DB_PATH), { recursive: true })
       }
     })
-    describe('When user schema already latest', () => {
+    describe('When user version already latest', () => {
       beforeEach(async () => {
         // setup database such that it is already latest
         if (existsSync(DB_PATH)) {
@@ -211,7 +211,7 @@ describe('Migration machine', () => {
       })
     })
 
-    describe('Else', () => {
+    describe('When user version is not latest', () => {
       beforeEach(async () => {
         // setup such that user version is ONE (1)
         const db = createDB(DB_PATH)
