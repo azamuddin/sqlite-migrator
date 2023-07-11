@@ -30,6 +30,7 @@ export const runFreshMigration =
     ) => Promise<void>,
   ) =>
   async (context: MigrationMachineContext) => {
+    logger.error('WHA IS GOING ON')
     logger.debug('migrationMachine.services.runFreshMigration', context.dbPath)
     const db = createDB(context.dbPath)
     const latest = getLatestMigration(context.migrationDir)
@@ -42,7 +43,8 @@ export const runFreshMigration =
           const migration = await import(
             path.resolve(context.migrationDir, version.toString(), file)
           )
-          await migrationRunner(migration, db, file)
+          logger.error(migration, 'MIGRATION TO RUN')
+          await migrationRunner(migration.default, db, file)
         })
       },
     )

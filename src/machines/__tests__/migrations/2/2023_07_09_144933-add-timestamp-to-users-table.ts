@@ -3,7 +3,7 @@ import { type Migration } from '../../../../types'
 import logger from 'node-color-log'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function up(db: Kysely<any>): Promise<void> {
+async function up(db: Kysely<any>): Promise<void> {
   logger.info('add timestamp up')
   await db.schema
     .alterTable('users')
@@ -17,7 +17,7 @@ export async function up(db: Kysely<any>): Promise<void> {
 }
 
 // eslint-disable-next-line
-export async function transform(db: Kysely<any>): Promise<void> {}
+async function transform(db: Kysely<any>): Promise<void> {}
 
 const migration: Migration = {
   up,

@@ -36,7 +36,7 @@ const copyAndTransform = (
         )
       )
       const source = createDB(resolve(dirname(context.dbPath), 'shadow.sqlite'))
-      runner(migration, source, context._schemaDB)
+      runner(migration.default, source, context._schemaDB)
     })
   }
 }
@@ -59,7 +59,7 @@ const runNextPendingMigration = (
           fileName,
         )
       )
-      runner(migration, context._schemaDB)
+      runner(migration.default, context._schemaDB)
     })
   }
 }
@@ -246,7 +246,7 @@ export const runPendingMigrationMachine = createMachine(
               const migration = await import(
                 resolve(context.migrationDir, version.toString(), fileName)
               )
-              await migration.up(context._schemaDB)
+              await migration.default.up(context._schemaDB)
             })
           },
         )

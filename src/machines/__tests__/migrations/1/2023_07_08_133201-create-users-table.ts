@@ -3,7 +3,7 @@ import logger from 'node-color-log'
 import { type Migration } from '../../../../types'
 
 // eslint-disable-next-line
-export async function up(db: Kysely<any>): Promise<void> {
+async function up(db: Kysely<any>): Promise<void> {
   logger.setLevel('debug')
   logger.info('create users table up', db)
   return await db.schema
@@ -15,7 +15,7 @@ export async function up(db: Kysely<any>): Promise<void> {
 }
 
 // eslint-disable-next-line
-export async function transform(db: Kysely<any>): Promise<void> {
+async function transform(db: Kysely<any>): Promise<void> {
   // nothing
 }
 
