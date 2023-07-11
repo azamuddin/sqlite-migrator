@@ -7,12 +7,13 @@
     "dev": "vite",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "build": "tsc && vite build && npm run build:types",
+    "build": "tsc && vite build && npm run test --run && npm run build:types",
     "build:types": "dts-bundle-generator --config ./dts-bundle-generator.config.ts && npm run copy:types",
     "copy:types": "cp dist/index.d.ts ./",
     "prepublishOnly": "corepack npm run build",
     "release": "npm publish",
-    "test": "vitest"
+    "test": "vitest --run",
+    "test:watch": "vitest"
   },
   "exports": {
     ".": {
