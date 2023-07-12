@@ -1,6 +1,6 @@
 {
   "name": "sqlite-migrator",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "A tiny tool to migrate sqlite3 database safely",
   "main": "index.js",
   "scripts": {
@@ -29,6 +29,10 @@
   ],
   "author": "Muhammad Azamuddin",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azamuddin/sqlite-migrator"
+  },
   "dependencies": {
     "@changesets/cli": "^2.26.2",
     "@xstate/immer": "^0.3.3",
