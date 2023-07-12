@@ -1,3 +1,6 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+
 ![Publish NPM Status](https://github.com/azamuddin/sqlite-migrator/actions/workflows/npm-publish.yml/badge.svg)
 
 
