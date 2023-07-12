@@ -48,9 +48,7 @@ Here is the example of migration file:
 
 ```
 import { Kysely } from 'kysely'
-import logger from 'node-color-log'
-
-import { type Migration } from '../../../../types'
+import { type Migration } from 'sqlite-migrator'
 
 // eslint-disable-next-line
 async function up(db: Kysely<any>): Promise<void> {
