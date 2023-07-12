@@ -1,3 +1,5 @@
+![Publish NPM Status](https://github.com/azamuddin/sqlite-migrator/actions/workflows/npm-publish.yml/badge.svg)
+
 
 # Sqlite Migrator 
 
