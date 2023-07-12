@@ -1,7 +1,9 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-
-![Publish NPM Status](https://github.com/azamuddin/sqlite-migrator/actions/workflows/npm-publish.yml/badge.svg)
+<p align="center">
+    <a href="https://opensource.org/licenses/MIT" alt="Contributors">
+        <img src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
+    <a href="#" alt="Backers on Open Collective">
+        <img src="https://github.com/azamuddin/sqlite-migrator/actions/workflows/npm-publish.yml/badge.svg" /></a>
+</p>
 
 
 # Sqlite Migrator 
