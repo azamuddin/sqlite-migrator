@@ -52,8 +52,6 @@ import { type Migration } from 'sqlite-migrator'
 
 // eslint-disable-next-line
 async function up(db: Kysely<any>): Promise<void> {
-  logger.setLevel('debug')
-  logger.info('create users table up', db)
   return await db.schema
     .createTable('users')
     .addColumn('id', 'integer', (col) => col.primaryKey())
@@ -100,7 +98,7 @@ migrate({
 You can see the state machine here: 
 
 1. Migration Machine
-https://stately.ai/registry/editor/embed/cc28b545-bcd7-472d-b3a5-ec54f091e228?machineId=cbd7bd16-356f-4f6b-a467-4021d9ef4137
+https://stately.ai/registry/editor/embed/cc27b545-bcd7-472d-b3a5-ec54f091e228?machineId=cbd7bd16-356f-4f6b-a467-4021d9ef4137
 
 2. Execute Migration Machine 
 https://stately.ai/registry/editor/embed/cc28b545-bcd7-472d-b3a5-ec54f091e228?machineId=c08f24bd-f922-443c-8b38-73e91c4514e8

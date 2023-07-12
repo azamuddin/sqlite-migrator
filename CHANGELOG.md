@@ -1,5 +1,11 @@
 # sqlite-migrator
 
+## 0.5.4
+
+### Patch Changes
+
+- Fix docs
+
 ## 0.5.3
 
 ### Patch Changes
