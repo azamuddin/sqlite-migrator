@@ -10,7 +10,7 @@
     "build": "tsc && vite build && npm run test --run && npm run build:types",
     "build:types": "dts-bundle-generator --config ./dts-bundle-generator.config.ts && npm run copy:types",
     "copy:types": "cp dist/index.d.ts ./",
-    "prepublishOnly": "corepack npm run build",
+    "prepublishOnly": "npm run build",
     "release": "npm publish",
     "test": "vitest --run",
     "test:watch": "vitest"
